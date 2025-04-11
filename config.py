@@ -1,7 +1,7 @@
 # config.py
 DATABASE_CONFIG = {
     'user': 'root',
-    'password': '123456',
+    'password': '',
     'host': 'localhost',
     'database': 'gestor_tareas'
 }

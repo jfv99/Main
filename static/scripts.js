@@ -1,10 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-    cargarTareas();
-    document.getElementById("form-tarea").addEventListener("submit", (e) => {
+    // cargarTareas();
+    // document.getElementById("form-tarea").addEventListener("submit", (e) => {
+    //     e.preventDefault();
+    //     agregarTarea();
+    // });
+    // document.getElementById("buscar").addEventListener("input", filtrarTareas);
+    document.getElementById("form-login").addEventListener("submit", (e) => {
         e.preventDefault();
-        agregarTarea();
+        login();
     });
-    document.getElementById("buscar").addEventListener("input", filtrarTareas);
 });
 
 function cargarTareas() {
@@ -82,4 +86,24 @@ function eliminarTarea(id) {
     fetch(`/tarea/${id}`, { method: "DELETE" })
         .then(() => cargarTareas())
         .catch(error => console.error("❌ Error eliminando tarea:", error));
+}
+
+function login() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+    fetch("/initSession", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+    // .then(response => response.json())
+    .then((response) => {
+        // cargarTareas();
+        document.getElementById("form-login").reset();
+        if (response.status == 200) {            
+            window.location.href = 'http://127.0.0.1:5000/home';
+        }
+        console.log('Inicio de sesón correctamente.',response);
+    })
+    .catch(error => console.error("❌ Error iniciando sesión verifique usuario y contraseña:", error));
 }

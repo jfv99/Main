@@ -1,11 +1,13 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from flask_mail import Mail
 from modelos import db, Tarea
 from controlador import GestorTareas
 from config import MAIL_CONFIG
+from userController import UserController
+from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/gestor_tareas'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root@localhost/gestor_tareas'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config.update(MAIL_CONFIG)
 
@@ -13,6 +15,9 @@ db.init_app(app)
 mail = Mail(app)
 
 gestor = GestorTareas()
+
+user = UserController()
+currentSession = False
 
 # 🔔 Verifica tareas vencidas automáticamente
 @app.before_request
@@ -22,7 +27,25 @@ def verificar_tareas_vencidas_automaticamente():
 
 @app.route('/')
 def index():
+    return redirect(url_for('login'))
+    if currentSession:
+        return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))
+        
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+# Ruta para ver el gestor de tareas
+@app.route('/home')
+def home():
     return render_template('index.html')
+    if currentSession:
+        return render_template('index.html')
+    else:
+        return redirect(url_for('login'))                
 
 # 📋 Listar tareas con filtros
 @app.route('/tareas', methods=['GET'])
@@ -75,6 +98,25 @@ def cambiar_estado(tarea_id):
 def eliminar_tarea(tarea_id):
     gestor.eliminar_tarea(tarea_id)
     return jsonify({'mensaje': '✅ Tarea eliminada correctamente'})
+
+# Inicio de sesión
+@app.route('/initSession', methods=['POST'])
+def initLogin():
+    try:
+        data = request.json
+        login = user.login(
+            data.get('email'),
+            data.get('password')
+        )        
+        print('login',login)
+        if not login:
+            return jsonify({'mensaje': 'Error al inciar sesión verifique usuario y contraseña', 'login': False}), 200
+        currentSession = True
+        return jsonify({'mensaje': '✅ Inicio de sesión exitosamente', 'login': True}), 200
+    except BadRequest as e:
+        return jsonify({'mensaje': str(e), 'login' : False}), 400
+    except Exception as e:
+        return jsonify({'mensaje': f'Errpr intero del servidor {str(e)}', 'login' : False}), 500
 
 if __name__ == '__main__':
     with app.app_context():
